@@ -1,0 +1,12 @@
+description 'Домашнее задание №2'
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+}
+
+sourceCompatibility = 17
+targetCompatibility = 17
