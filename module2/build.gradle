@@ -1,0 +1,18 @@
+description 'Домашнее задание №2'
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+}
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'ru.micromagicman.cryptography.module1.App'
+    }
+}
