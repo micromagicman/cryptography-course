@@ -1,13 +1,13 @@
-package ru.micromagicman.cryptography.module2.service;
+package ru.micromagicman.cryptography.module3.service;
 
-import ru.micromagicman.cryptography.module2.CommonConstants;
+import ru.micromagicman.cryptography.module3.CommonConstants;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.KeyPair;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Сервис для шифрования/дешифрования произвольных текстовых сообщений
@@ -15,58 +15,50 @@ import java.util.function.BiFunction;
 public class CryptoService {
 
     /**
-     * Симметричный шифр, используемый для преобразования текста
-     */
-    private final Cipher cipher;
-
-    /**
      * Абстрактный провайдер ключей шифрования
      */
-    private final BiFunction<String, String, SecretKey> keyProvider;
+    private final BiFunction<String, String, KeyPair> keyPairProvider;
 
     /**
-     * Начальный вектор для проведения операции
-     */
-    public static final byte[] INIT_VECTOR = new byte[16];
-
-    /**
-     * Операция симметричного шифрования
+     * Операция асимметричного шифрования
      */
     public enum Operation {
 
         /**
          * Шифрование
          */
-        ENCRYPT( Cipher.ENCRYPT_MODE ),
+        ENCRYPT( Cipher.ENCRYPT_MODE, KeyPair::getPublic ),
 
         /**
          * Дешифрование
          */
-        DECRYPT( Cipher.DECRYPT_MODE );
+        DECRYPT( Cipher.DECRYPT_MODE, KeyPair::getPrivate );
 
         /**
          * Код операции
          */
         private final int code;
 
-        Operation( final int mode ) {
+        private final Function<KeyPair, Key> keyExtractor;
+
+        Operation( final int mode, final Function<KeyPair, Key> keyExtractor ) {
             this.code = mode;
+            this.keyExtractor = keyExtractor;
         }
 
         /**
          * Проведение операции для конкретного шифра
          * Метод обеспечивает синхронизированный доступ к объекту cipher для проведения операции
          */
-        public synchronized byte[] perform( final byte[] data, final Cipher cipher, final Key key )
+        public byte[] perform( final byte[] data, final Cipher cipher, final KeyPair keyPair )
                 throws Exception {
-            cipher.init( code, key, new IvParameterSpec( INIT_VECTOR ) );
+            cipher.init( code, keyExtractor.apply( keyPair ) );
             return cipher.doFinal( data );
         }
     }
 
-    public CryptoService( final BiFunction<String, String, SecretKey> keyProvider ) {
-        this.cipher = createCipher();
-        this.keyProvider = keyProvider;
+    public CryptoService( final BiFunction<String, String, KeyPair> keyPairProvider ) {
+        this.keyPairProvider = keyPairProvider;
     }
 
     /**
@@ -119,8 +111,8 @@ public class CryptoService {
      */
     private byte[] operate( final byte[] data, final Operation operation, final String keyAlias, final String keyPassword ) {
         try {
-            final Key secretKey = keyProvider.apply( keyAlias, keyPassword );
-            return operation.perform( data, cipher, secretKey );
+            final KeyPair keyPair = keyPairProvider.apply( keyAlias, keyPassword );
+            return operation.perform( data, createCipher(), keyPair );
         } catch ( Exception exception ) {
             throw new RuntimeException( String.format( CommonConstants.MessageTemplates.OPERATION_ERROR, operation.name() ),
                     exception );
@@ -132,12 +124,12 @@ public class CryptoService {
      */
     private Cipher createCipher() {
         try {
-            return Cipher.getInstance( CommonConstants.Algorithms.SYMMETRIC_ALGORITHM_NAME );
+            return Cipher.getInstance( CommonConstants.Algorithms.ASYMMETRIC_ALGORITHM_NAME );
         } catch ( Exception exception ) {
             throw new RuntimeException(
                     String.format(
                             CommonConstants.MessageTemplates.ALGORITHM_INIT_ERROR,
-                            CommonConstants.Algorithms.SYMMETRIC_ALGORITHM_NAME
+                            CommonConstants.Algorithms.ASYMMETRIC_ALGORITHM_NAME
                     ),
                     exception
             );
