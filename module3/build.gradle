@@ -1,0 +1,15 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+}
+
+description 'Домашнее задание №3'
+
+dependencies {
+    implementation project(':commons')
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.69'
+}
+
+shadowJar {
+    exclude '**/*.md'
+    exclude '**/*.txt'
+}

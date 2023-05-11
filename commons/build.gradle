@@ -1,0 +1,5 @@
+description 'Модуль с общими сервисами и зависимостями'
+
+dependencies {
+    compileOnly 'org.bouncycastle:bcpkix-jdk15on:1.69'
+}
